@@ -15,6 +15,9 @@ else:
     print("Discord token loaded successfully!")
 
 
+# ดึง TOKEN จากไฟล์ .env
+TOKEN = os.getenv("DISCORD_TOKEN")
+
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 
 # Bot Event
@@ -60,6 +63,8 @@ async def on_message(message):
     elif "hate" in mes:
         await message.channel.send("I don't care.")
     elif mes == 'hi bot':
+        await message.channel.send("Hello, " + str(message.author.name))
+    elif mes == 'hi':
         await message.channel.send("Hello, " + str(message.author.name))
 
     await bot.process_commands(message)
