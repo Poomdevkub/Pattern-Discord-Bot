@@ -3,6 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 from dotenv import load_dotenv
 import os
+import json
 
 # โหลดตัวแปรจากไฟล์ .env
 load_dotenv()
@@ -69,6 +70,24 @@ async def on_message(message):
 
     await bot.process_commands(message)
     # ทำคำสั่ง event แล้วไปทำคำสั่ง bot command ต่อ
+
+
+
+@bot.event
+
+# ฟังก์ชันเพื่อตรวจสอบคำหยาบคาย
+def load_profanity_list(filename):
+    with open(filename, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+        return data['profanity']
+
+# โหลดคำหยาบจากไฟล์
+profanity_list = load_profanity_list('profanity.json')
+
+# ฟังก์ชันเพื่อตรวจสอบคำหยาบคาย
+def check_profanity(content):
+    return any(profanity in content.lower() for profanity in profanity_list)
+
 
 
 # กำหนดคำสั่งมให้บอท
