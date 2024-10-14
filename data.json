@@ -1,0 +1,13 @@
+{
+    "data": [
+        {
+            "text": "fuck",
+            "label": 1
+        },
+        {
+            "text": "Dimon",
+            "label": 0
+        }
+        
+    ]
+}

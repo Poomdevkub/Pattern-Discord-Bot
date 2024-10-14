@@ -76,7 +76,7 @@ async def on_message(message):
 @bot.event
 
 # ฟังก์ชันเพื่อตรวจสอบคำหยาบคาย
-def load_profanity_list(filename):
+async def load_profanity_list(filename):
     with open(filename, 'r', encoding='utf-8') as f:
         data = json.load(f)
         return data['profanity']
@@ -85,7 +85,7 @@ def load_profanity_list(filename):
 profanity_list = load_profanity_list('profanity.json')
 
 # ฟังก์ชันเพื่อตรวจสอบคำหยาบคาย
-def check_profanity(content):
+async def check_profanity(content):
     return any(profanity in content.lower() for profanity in profanity_list)
 
 
