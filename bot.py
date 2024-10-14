@@ -4,13 +4,6 @@ from discord import app_commands
 from dotenv import load_dotenv
 import os
 import json
-import sklearn
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn import svm
-
-# โหลดโมเดลและ vectorizer ที่ฝึกไว้
-vectorizer = TfidfVectorizer()
-model = svm.SVC(kernel='linear')
 
 # โหลดตัวแปรจากไฟล์ .env
 load_dotenv()
@@ -73,7 +66,8 @@ async def on_message(message):
     
     # ตรวจสอบคำหยาบ
     if check_profanity(mes):
-        await message.channel.send("Please avoid using offensive language.")
+        await message.delete()  # ลบข้อความที่มีคำหยาบ
+        await message.channel.send(f"{message.author.mention}, please avoid using offensive language.")
         return
 
     if mes == 'hello':
