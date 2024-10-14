@@ -2,128 +2,126 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from dotenv import load_dotenv
+import openai
 import os
 
 # โหลดตัวแปรจากไฟล์ .env
 load_dotenv()
 
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
-if DISCORD_TOKEN is None:
-    raise Exception("Discord token not found in environment variables.")
+if DISCORD_TOKEN is None or OPENAI_API_KEY is None:
+    raise Exception("Discord token or OpenAI API key not found in environment variables.")
 else:
-    print("Discord token loaded successfully!")
+    print("Discord token and OpenAI API key loaded successfully!")
 
-
-# ดึง TOKEN จากไฟล์ .env
-TOKEN = os.getenv("DISCORD_TOKEN")
+# ตั้งค่า OpenAI API Key
+openai.api_key = OPENAI_API_KEY
 
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 
+# ฟังก์ชันเพื่อตรวจสอบคำหยาบคายโดยใช้ ChatGPT
+async def check_profanity(content):
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",  # ใช้โมเดลที่เหมาะสม
+            messages=[{"role": "user", "content": f"Check if this message contains profanity: {content}"}]
+        )
+        result = response.choices[0].message['content'].strip().lower()
+        return "yes" in result  # ถ้า ChatGPT ระบุว่ามีคำหยาบ จะคืนค่าเป็น True
+    except Exception as e:
+        print(f"Error calling OpenAI API: {e}")
+        return False
+
 # Bot Event
 @bot.event
-async def on_ready():         # ทำงานแบบ Asynchronous
-    print("Bot Online!")      # คำสั่ง check bot พร้อมใช้งาน
-    synced = await bot.tree.sync() # ทำให้คำสั่ของ bot ซิงค์กับโค้ดของเรา
-    print(f"{len(synced)} command(s)")
-
+async def on_ready():
+    print("Bot Online!")
+    synced = await bot.tree.sync()
+    print(f"{len(synced)} command(s) synced")
 
 # แจ้งคนเข้า-ออกเซิร์ฟเวอร์
-@bot.event                    
+@bot.event
 async def on_member_join(member):
-    channel = bot.get_channel(962645903188058134)   # ID ห้อง
-    text = f"Welcome to server, {member.mention}!"
+    channel = bot.get_channel(962645903188058134)  # ID ห้อง
+    text = f"Welcome to the server, {member.mention}!"
     
-    emmbed = discord.embed(title = 'Welcome to the server!',
-                           description = text,
-                           color = 0x66FFFF)
+    embed = discord.Embed(title='Welcome to the server!',
+                           description=text,
+                           color=0x66FFFF)
     
     await channel.send(text)    # ส่งข้อความไปที่ห้องนี้
-    await channel.send(embed = emmbed) # ส่ง Embed ไปที่ห้องนี้
+    await channel.send(embed=embed)  # ส่ง Embed ไปที่ห้องนี้
     await member.send(text)     # ส่งข้อความไปที่แชทส่วนตัวของ member
-    
-    
+
 @bot.event
 async def on_member_remove(member):
-    channel = bot.get_channel(962645903188058134)   # ID ห้อง
+    channel = bot.get_channel(962645903188058134)  # ID ห้อง
     text = f"{member.name} has left the server!"
     await channel.send(text)    # ส่งข้อความไปที่ห้องนี้
-
 
 # คำสั่ง chat bot
 @bot.event
 async def on_message(message):
+    if message.author == bot.user:
+        return
+    
     mes = message.content  # ดึงข้อความที่ถูกส่งมา
-    if mes == 'hello':
-        await message.channel.send("Hello, I'm here. What's up?.") # ส่งกลับไปที่ห้องนั่น
-    # elif "I'm" in mes or "Im" in mes:
-    #     await message.channel.send("That's your issue, not mine.")
-    elif "wtf" in mes:
-        await message.channel.send("It's not your business.")
-    elif "hate" in mes:
-        await message.channel.send("I don't care.")
-    elif mes == 'hi bot':
-        await message.channel.send("Hello, " + str(message.author.name))
-    elif mes == 'hi':
-        await message.channel.send("Hello, " + str(message.author.name))
+    
+    # ตรวจจับคำหยาบคาย
+    if await check_profanity(mes):
+        await message.delete()  # ลบข้อความที่มีคำหยาบคาย
+        await message.channel.send(f'{message.author.mention}, your message has been removed due to inappropriate content.')
+    else:
+        if mes.lower() in ['hello', 'hi bot', 'hi']:
+            await message.channel.send(f"Hello, {message.author.name}")
 
-    await bot.process_commands(message)
-    # ทำคำสั่ง event แล้วไปทำคำสั่ง bot command ต่อ
+    await bot.process_commands(message)  # ทำคำสั่ง event แล้วไปทำคำสั่ง bot command ต่อ
 
-
-# กำหนดคำสั่งมให้บอท
+# กำหนดคำสั่งให้บอท
 @bot.command()
 async def hello(ctx):
-    await ctx.send(f"hello {ctx. author.name}!")
-
+    await ctx.send(f"Hello {ctx.author.name}!")
 
 @bot.command()
 async def test(ctx, arg):
     await ctx.send(arg)
 
-
 # Slash Commands
 @bot.tree.command(name='hellobot', description='Replies with Hello')
 async def hellocommand(interaction):
-    await interaction.response.send_message("Hello It's me BOT DISCORD")
-
+    await interaction.response.send_message("Hello, it's me BOT DISCORD!")
 
 @bot.tree.command(name='name')
-@app_commands.describe(name = "What's your name?")
-async def namecommand(interaction, name : str):
-    await interaction.response.send_message(f"Hello {name}")
-
+@app_commands.describe(name="What's your name?")
+async def namecommand(interaction, name: str):
+    await interaction.response.send_message(f"Hello {name}!")
 
 # Embeds
 @bot.tree.command(name='help', description='Bot Command')
 async def helpcommand(interaction):
-    emmbed = discord.Embed(title='Help Me! - Bot Commands', 
+    embed = discord.Embed(title='Help Me! - Bot Commands', 
                            description='Bot Commands',
                            color=0x66FFFF,
                            timestamp=discord.utils.utcnow())
     
     # ใส่ข้อมูล
-    emmbed.add_field(name='/hello1', value='Hello Command', inline=True)
-    emmbed.add_field(name='/hello2', value='Hello Command', inline=True)
-    emmbed.add_field(name='/hello3', value='Hello Command', inline=False)
+    embed.add_field(name='/hello', value='Greets the user', inline=True)
+    embed.add_field(name='/name', value='Replies with your name', inline=True)
+    embed.add_field(name='/help', value='Displays this help message', inline=False)
 
-    emmbed.set_author(name='Author', url='https://www.youtube.com/@cristiano', icon_url='https://yt3.googleusercontent.com/yKfa-GV-v_O-6jZKHwBuc2FX0Q5ths8OqYTOAmOwzVY0q3miZT0L-rUzve-M2QBdONcTYaEO_JI=s160-c-k-c0x00ffffff-no-rj')
-    
+    embed.set_author(name='Author', url='https://www.youtube.com/@cristiano', 
+                     icon_url='https://yt3.googleusercontent.com/yKfa-GV-v_O-6jZKHwBuc2FX0Q5ths8OqYTOAmOwzVY0q3miZT0L-rUzve-M2QBdONcTYaEO_JI=s160-c-k-c0x00ffffff-no-rj')
     
     # ใส่รูปขนาดเล็ก-ใหญ่
-    emmbed.set_thumbnail(url='')
-    emmbed.set_image(url='')
-    
+    embed.set_thumbnail(url='')  # สามารถเพิ่ม URL ของภาพได้ที่
+
+    embed.set_image(url='')      # สามารถเพิ่ม URL ของภาพได้ที่นี่
     
     # Footer เนื้อหาส่วนท้าย
-    emmbed.set_footer(text='Footer', icon_url='')
-    
-    
-    
-    await interaction.response.send_message(embed = emmbed)
+    embed.set_footer(text='Footer', icon_url='')
 
+    await interaction.response.send_message(embed=embed)
 
-
-
-
-bot.run(TOKEN)
+bot.run(DISCORD_TOKEN)
