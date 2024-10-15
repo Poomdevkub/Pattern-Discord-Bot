@@ -13,7 +13,7 @@ warnings.filterwarnings("ignore", message="The parameter 'token_pattern' will no
 
 # นำเข้าข้อมูล
 data = pd.read_csv("data.csv")  # เปลี่ยนเป็นชื่อไฟล์ของคุณ
-print(data)
+# print(data) เป็นการโชว์ในTerminal
 
 # แยกข้อมูลเป็น features และ labels
 X = data['text']
