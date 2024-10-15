@@ -27,11 +27,26 @@ model = load('svm_profanity_model.joblib')
 vectorizer = load('vectorizer.joblib')
 
 # ฟังก์ชันทำนายข้อความใหม่
+# def predict_new_text(text):
+#     words = word_tokenize(text)  # แยกคำก่อนการทำนาย
+#     text_vect = vectorizer.transform([" ".join(words)])  # แปลงข้อความเป็น feature vector
+#     prediction = model.predict(text_vect)  # ทำนายด้วยโมเดล
+#     return prediction[0] == 1  # คืนค่า True หากเป็นคำหยาบ
+
+# ฟังก์ชันทำนายข้อความใหม่
 def predict_new_text(text):
-    words = word_tokenize(text)  # แยกคำก่อนการทำนาย
-    text_vect = vectorizer.transform([" ".join(words)])  # แปลงข้อความเป็น feature vector
-    prediction = model.predict(text_vect)  # ทำนายด้วยโมเดล
+    # ลบช่องว่างทั้งหมดออกจากข้อความก่อนการทำนาย
+    clean_text = text.replace(" ", "")
+    
+    # ใช้ word_tokenize เพื่อแยกคำ
+    words = word_tokenize(clean_text)  
+    
+    # แปลงข้อความเป็น feature vector และทำนายด้วยโมเดล SVM
+    text_vect = vectorizer.transform([" ".join(words)])  
+    prediction = model.predict(text_vect)  
+    
     return prediction[0] == 1  # คืนค่า True หากเป็นคำหยาบ
+
 
 # Bot Event
 @bot.event
@@ -69,8 +84,15 @@ async def on_message(message):
     
     # ตรวจสอบคำหยาบด้วยโมเดล SVM
     if predict_new_text(mes):
-        await message.delete()  # ลบข้อความที่มีคำหยาบ
-        await message.channel.send(f"{message.author.mention}, please avoid using offensive language.")
+        try:
+            await message.delete()  # ลบข้อความที่มีคำหยาบ
+            await message.channel.send(f"{message.author.mention}, please avoid using offensive language.")
+        except discord.NotFound:
+            print("ข้อความไม่พบแล้ว")
+        except discord.Forbidden:
+            print("Bot ไม่มีสิทธิ์ในการลบข้อความ")
+        except discord.HTTPException:
+            print("เกิดข้อผิดพลาดในการลบข้อความ")
         return
 
     # คำสั่งอื่นๆ
