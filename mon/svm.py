@@ -4,6 +4,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn import svm
 from sklearn.metrics import classification_report
+from joblib import dump
 import pandas as pd
 import warnings
 
@@ -38,15 +39,8 @@ y_pred = model.predict(X_test_vect)
 # แสดงผลการทำนาย พร้อมจัดการ zero_division เพื่อป้องกัน undefined metric
 print(classification_report(y_test, y_pred, zero_division=1))
 
-# ฟังก์ชันทำนายข้อความใหม่
-def predict_new_text(text):
-    words = word_tokenize(text)  # แยกคำก่อนการทำนาย
-    print("คำที่แยกออกมา:", words)  # แสดงคำที่แยกออกมา
-    text_vect = vectorizer.transform([" ".join(words)])  # แปลงข้อความเป็น feature vector โดยรวมคำที่แยกออกมา
-    prediction = model.predict(text_vect)  # ทำนายด้วยโมเดล
-    return "คำหยาบ" if prediction[0] == 1 else "ไม่เป็นคำหยาบ"
+# บันทึกโมเดล SVM และ vectorizer ลงไฟล์
+dump(model, 'svm_profanity_model.joblib')
+dump(vectorizer, 'vectorizer.joblib')
 
-# ตัวอย่างการทดสอบ
-new_text = input("กรุณาใส่ข้อความที่ต้องการตรวจสอบ: ")
-print("ข้อความ:", new_text)
-print("ผลลัพธ์:", predict_new_text(new_text))
+print("โมเดลและ vectorizer ถูกบันทึกเรียบร้อยแล้ว.")
