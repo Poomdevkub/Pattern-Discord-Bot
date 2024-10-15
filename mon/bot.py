@@ -84,8 +84,15 @@ async def on_message(message):
     
     # ตรวจสอบคำหยาบด้วยโมเดล SVM
     if predict_new_text(mes):
-        await message.delete()  # ลบข้อความที่มีคำหยาบ
-        await message.channel.send(f"{message.author.mention}, please avoid using offensive language.")
+        try:
+            await message.delete()  # ลบข้อความที่มีคำหยาบ
+            await message.channel.send(f"{message.author.mention}, please avoid using offensive language.")
+        except discord.NotFound:
+            print("ข้อความไม่พบแล้ว")
+        except discord.Forbidden:
+            print("Bot ไม่มีสิทธิ์ในการลบข้อความ")
+        except discord.HTTPException:
+            print("เกิดข้อผิดพลาดในการลบข้อความ")
         return
 
     # คำสั่งอื่นๆ
